@@ -3,6 +3,15 @@
 *Status: DRAFT, awaiting James's review · 2026-10-10 · target: VC expo, Monday 2026-10-12*
 *North star: [THESIS.md](../../THESIS.md). Every section below is checked against it.*
 
+> **This is a prototype.** James's own Brain is the working system; BrainKeep v0.1 exists
+> so someone can install it and look at how it works. Two rules follow from that:
+>
+> - **Break loudly.** Anything not working stops with a non-zero exit and a plain message
+>   saying what failed and where. No fallbacks, no retries, no "degrade gracefully", no
+>   swallowed exceptions. A broken prototype that says so beats one that looks fine.
+> - **Prototype scope.** No upgrade paths, no migration, no uninstall, no compatibility
+>   shims. Build the shortest honest version of each piece.
+
 ## Objective
 
 **BrainKeep is an agentic architecture that enables efficient recall and builds itself with
@@ -26,7 +35,8 @@ transcripts, no hostnames.
 3. **A human can read everything.** Nobody approves every change, but anyone can open any
    page, agent or change and understand it.
 4. **Nothing fails silently.** Every pending, dropped, stale or superseded thing is a file
-   or a line a human can open. *(This is claim 3 applied to failures.)*
+   or a line a human can open. *(This is claim 3 applied to failures.)* In the prototype
+   this means **break loudly**: a failure is an error the user sees, not a log line.
 
 **Positioning:** "Works under Orca, Claude Code, Codex and Hermes." Never "like Orca".
 Trackers are a separate public repo, linked from the README as an optional Docker add-on.
@@ -92,8 +102,24 @@ push) forks, returns `{}` immediately, runs single-flight under a lock, and writ
 outcome to `.brainkeep/status/`. The next SessionStart reads that folder and says what
 didn't land.
 
+**How "break loudly" works when nobody is watching.** A detached observer can't print to
+the session that launched it, so its failure has to surface somewhere else, loudly:
+
+| Where it fails | What the user sees |
+|---|---|
+| A Gate (sync) | non-zero exit + one-line error in the harness, naming the script and the cause |
+| An observer (detached) | `status/FAILED-<what>.md` with the error and the command; the **next SessionStart puts it at the top of the context in a `BRAINKEEP FAILURE` block** and it stays there until the file is deleted |
+| The CLI | non-zero exit, error on stderr, no partial output passed off as success |
+| The Night Watch | report opens with `OUTCOME: failed` and the step that broke; the timer unit exits non-zero so `systemctl --user` shows it red |
+
+No `|| true`, no bare `except:`, no retry loops, no fallback from one search method to
+another. If the router's search DB is missing, the router errors; it does not quietly
+inject nothing.
+
 **One writer at a time.** All Library writes by machinery take `flock` on
 `.brainkeep/status/write.lock`; the lock file names its holder (harness, pid, start time).
+A second writer does not wait or skip quietly: it fails with `lock held by <holder>` and
+writes a `FAILED-` file like any other observer.
 Commits stage the writer's own paths, never `git add -A`, and carry a
 `BrainKeep-Writer: <harness>/<keeper>` trailer.
 
@@ -154,7 +180,7 @@ branches are cut.
 ```
 Install (dry run, shows the plan):   ./install.sh --library ~/library --harness claude,codex,hermes
 Install (apply):                     ./install.sh --library ~/library --harness claude --apply
-Health check:                        bin/brainkeep doctor          # wiring + drift + status, exit 1 on any failure
+Health check:                        bin/brainkeep doctor          # wiring + dead symlinks + FAILED- files, exit 1 on any
 Rebuild the index:                   bin/brainkeep index
 Search:                              bin/brainkeep search "<query>"
 Night Watch on demand:               bin/brainkeep night-watch
@@ -172,7 +198,8 @@ One config value: `BRAINKEEP_LIBRARY`, written by the installer to
 brainkeep/
 ├── THESIS.md                 the north star
 ├── README.md                 pitch, ASCII keep, diagram, 3-command quickstart
-├── install.sh                dry-run by default; --apply to write; marker-owned entries
+├── install.sh                dry-run by default; --apply to write; symlinks, never copies
+│                             (so nothing can drift); marker-owned config entries
 ├── bin/brainkeep             the one CLI (doctor, index, search, night-watch, leak-scan)
 ├── keepers/
 │   ├── agents/               brain-manager, agent-builder, agent-builder-worker
@@ -223,13 +250,15 @@ def push_outcome(library: Path, ok: bool, detail: str) -> None:
   personal paths, no personal project names.
 - **New tests, one per Category A/E claim:**
   - observer returns within 200 ms while its work continues (detach)
-  - two observers at once → one runs, the other records "skipped, held by <holder>"
+  - two observers at once → one runs, the other exits non-zero with "lock held by <holder>" and writes a `FAILED-` file
+  - a `FAILED-` file in `status/` → SessionStart output begins with the `BRAINKEEP FAILURE` block
+  - router with a missing search DB → non-zero exit and a named error, not an empty injection
   - run capture twice on the same transcript → one raw file (content hash)
   - commit stages only the writer's paths; a foreign staged file is left alone
   - push to an unreachable remote → `status/push.md` says FAILED and SessionStart shows it
   - leak scan blocks a staged file containing an IP, an email, a token-shaped string or `/home/<user>`
   - `install.sh` without `--apply` changes nothing (tree hash before == after)
-  - `doctor` exits 1 when a skill copy has drifted from its source
+  - `doctor` exits 1 when a hook is not wired or a symlink is dead, and names which
 - **End-to-end smoke:** install into a temp HOME with a fake harness config, open/close a
   scripted session, assert the Library commit and the raw file exist.
 
@@ -244,7 +273,8 @@ def push_outcome(library: Path, ok: bool, detail: str) -> None:
 - **Never:** copy content, config files or secrets from the live Brain (`~/.hermes/config.yaml`,
   `~/.codex/auth.json`, notifier env files, monitoring drop-ins, Orca config) ·
   `git add -A` · put raw transcripts in git · execute code from the MemPalace clone · add
-  an approve-every-change gate · say "like Orca".
+  an approve-every-change gate · say "like Orca" · swallow an error (`|| true`, bare
+  `except:`, `2>/dev/null` on a step that matters, a silent fallback or retry).
 
 ## Success Criteria (Monday demo)
 
@@ -259,6 +289,9 @@ def push_outcome(library: Path, ok: bool, detail: str) -> None:
 6. The README renders on a phone: keep logo, one-line thesis, diagram, 3-command quickstart,
    link to the trackers repo.
 7. Every shelf in `library-template/` has a `CARD.md` a stranger can read.
+8. **Breaking it is loud:** unplug the remote, delete the search DB, or hold the lock from
+   a second shell. Each one produces a visible, named error at the point listed in the
+   "break loudly" table. None of them produces a quiet success.
 
 Out of scope for Monday: Category B beyond P7 and the `OUTCOME:` line, hazard routes,
 `superseded_by:`, uninstall, Codex/Hermes end-to-end smoke (unit tests only), the SVG logo,
