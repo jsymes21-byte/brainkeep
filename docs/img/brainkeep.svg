@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="BrainKeep solid keep with a node graph cut into it">
+  <title>BrainKeep - solid stepped keep with a node graph in negative space</title>
+  <defs>
+    <mask id="cut" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+      <rect width="64" height="64" fill="#fff"/>
+      <path d="M32 20L22 37L32 51L42 37Z" stroke="#000" stroke-width="3" stroke-linejoin="round" fill="none"/>
+      <g fill="#000">
+        <circle cx="22" cy="37" r="4"/>
+        <circle cx="42" cy="37" r="4"/>
+        <circle cx="32" cy="51" r="4"/>
+        <circle cx="32" cy="20" r="5.6"/>
+      </g>
+    </mask>
+  </defs>
+  <path fill="#8B7CF6" mask="url(#cut)" d="M6 58V44H13V28H20V6H26V12H29V6H35V12H38V6H44V28H51V44H58V58Z"/>
+  <circle cx="32" cy="20" r="3.8" fill="#F6C85F"/>
+</svg>
