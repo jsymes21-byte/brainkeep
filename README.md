@@ -1,8 +1,9 @@
 <p align="center">
-  <img src="docs/img/brainkeep.svg" width="128" alt="BrainKeep logo: a stepped keep">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/img/brainkeep-lockup-dark.png">
+    <img src="docs/img/brainkeep-lockup-light.png" width="420" alt="BrainKeep: a stepped keep with an agent graph cut into it, beside the name">
+  </picture>
 </p>
-
-<h1 align="center">BrainKeep</h1>
 
 <p align="center">
   <b>One shared, plain-markdown memory for your AI agents. Agents run it, and you can read all of it.</b>
