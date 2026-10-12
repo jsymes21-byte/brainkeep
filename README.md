@@ -29,7 +29,7 @@
 **Who it's for:** builders who run several AI agents (Claude Code, Codex, or Hermes, an open-source agent runtime) and want a memory they can read.
 
 BrainKeep is a git repo of plain-markdown pages that these agents share. Each one reads it when a session starts and writes back to it when the session ends.
-Background maintenance agents, called **Keepers**, audit it nightly and repair its machinery. A Keeper that lands finished work is built, and switching it on is pending.
+Background maintenance agents, called **Keepers**, audit it nightly and repair its machinery. A Keeper that lands finished work went onto the main branch on 2026-10-12 (the first thing it landed was itself); it isn't in daily use yet.
 It's designed so that a person can open any page, any agent or any change and understand it.
 
 BrainKeep will be that architecture with my own content stripped out. Today this repo has the thesis and this README; the extraction is under way.
@@ -158,7 +158,7 @@ My library uses 6 hundreds and about fifty classes in all.
 | Night audit | Daily, plus a weekly report | Reads the pages that changed and reports; never fixes |
 | Brain manager | Any loud failure | Works on the machinery (hooks, index, search, router); fixes what it's shown and reports the rest |
 | Agent builder | Started by hand | Builds new agents and skills from a spec, inside a fence |
-| Lander *(built, landing pending)* | A green report plus an approval | Rebases, re-runs the gate and fast-forwards; never pushes |
+| Lander *(landed 2026-10-12, not yet in daily use)* | A green report plus an approval | Rebases, re-runs the gate and fast-forwards; never pushes |
 
 An unattended Keeper runs with a tool allowlist, a 30-minute rate guard and a kill switch.
 Before any re-wake, a liveness check answers **live**, **exited** or **unverifiable**. Only "exited" allows a re-run, and silence alone never triggers action.
@@ -167,7 +167,7 @@ Before any re-wake, a liveness check answers **live**, **exited** or **unverifia
 
 ## Features
 
-✅ **live**: running daily in the private Brain · 🧪 **built**: green on a branch, landing pending · ⏳ **next**: not built.
+✅ **live**: running daily in the private Brain · 🧪 **just landed**: on the main branch since 2026-10-12, not yet proven in daily use · ⏳ **next**: not built.
 None of it is in this repo yet ([why](#status--roadmap)).
 
 **Bridge and session loop**
@@ -364,7 +364,7 @@ That's the core loop. The Keepers, the router and the ledger come later and are 
 | Receipt gate, transcript capture, status block | ✅ | ⏳ |
 | Night audit, brain manager, OUTCOME reports, ledger | ✅ | ⏳ |
 | Supersede, hazard routes, doctor | ✅ | ⏳ |
-| Reclass, worktrees, automatic landing, snapshot lint | 🧪 built | ⏳ |
+| Reclass, worktrees, automatic landing, snapshot lint | 🧪 just landed | ⏳ |
 | Content-free skeleton you can clone | n/a | ⏳ next |
 | Installer / first-run setup | n/a | ⏳ not started |
 | Shelves a stranger can run | n/a | ⏳ open problem |
