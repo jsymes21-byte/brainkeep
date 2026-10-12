@@ -63,21 +63,13 @@ A fenced *agent builder*, started by hand, writes new agents and their skills fr
 - **Every commit names its writer** in a `Brain-Writer: <runtime>/<session>` trailer.
 - **Built to fail loudly.** A missed push, a missed write-back or a stray file is shown at the next start, and so is a handoff that's waiting. Recall helpers (router, search) fail open by design, so they never block a prompt.
 
-### Small reading cost: ~1% of the library per task (median)
-In my own library of about 1.4M tokens and about 380 pages:
+### Small start cost: about 5k tokens
+The Brain adds **about 5k tokens** at session start (the status block plus the `hot.md` snapshot).
+That sits on top of the **~30k** Claude Code already loads before your first message: its own instructions, tool definitions and skill lists (the median across my last 235 sessions, from Claude Code's usage logs).
+From there the agent opens the index and the one page the task needs, not the whole library.
 
-| Step | Tokens |
-|---|---|
-| Session start (snapshot + status block) | **~5k** |
-| Start + index + the page the task needs | **~9–16k** (median) |
-| Share of the whole library | **about 1%** |
-
-A script counted characters on a snapshot of the library and divided by four; that is an estimate, not a tokenizer count.
-The sample was 34 real prompts, each with a known target page.
-Tasks that route to a very large page cost more, because then the page itself is the cost.
-
-**It does not measure** answer quality, the harness's own system-prompt and tool overhead, extra pages an agent decides to open, or misroutes.
-Its baseline is "read the whole library", which no real agent does. So read it as the size of what a session needs next to the size of the library, not as savings over a capable agent without BrainKeep.
+The 5k is a character-based estimate (characters ÷ 4), not a tokenizer count.
+**Whether BrainKeep saves tokens overall is not measured yet.** The test that would show it runs the same real tasks with and without the Brain and compares total tokens and whether the answer was right. That comparison is next.
 
 ### Works across runtimes
 One library serves Claude Code, Codex and Hermes. Each runtime gets a thin instructions file and its own small set of hooks, and the libraries behind them are shared.
@@ -109,7 +101,7 @@ Each runtime also has **hooks**: Claude Code wires 6 event types (start, prompt,
 2. **`index.md`** is a shelf map that's regenerated at every session close. Nobody edits it by hand.
 3. **One routed page** comes next, the page the task actually needs.
 
-> Honest note: `hot.md` has a ~500-word target, but mine has grown to about 2,400 words and makes up most of the ~5k start cost. That's why a length check is built and waiting to land.
+> Honest note: `hot.md` has a ~500-word target, but mine has grown to about 2,400 words and makes up most of the ~5k start cost. A length check for it landed on 2026-10-12.
 
 ### Shelves
 Every file carries a Dewey-style **class** (000–900) in its frontmatter. That includes scripts and config, not only pages.
